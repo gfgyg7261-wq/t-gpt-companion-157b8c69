@@ -1,13 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useServerFn } from "@tanstack/react-start";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, type UIMessage } from "ai";
 import { z } from "zod";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { getThreadMessages, deleteLastAssistantMessage } from "@/lib/chat.functions";
 import {
   Conversation,
   ConversationContent,
@@ -50,8 +48,6 @@ const MODELS = [
 function ChatPage() {
   const { threadId } = Route.useParams();
   const { q } = Route.useSearch();
-  const fetchMsgs = useServerFn(getThreadMessages);
-  const delLastAssistant = useServerFn(deleteLastAssistantMessage);
   const qc = useQueryClient();
   const autoSentRef = useRef<string | null>(null);
 
@@ -65,7 +61,19 @@ function ChatPage() {
 
   const { data: initialMessages, isLoading } = useQuery({
     queryKey: ["messages", threadId],
-    queryFn: () => fetchMsgs({ data: { threadId } }),
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("messages")
+        .select("id,role,parts,created_at")
+        .eq("thread_id", threadId)
+        .order("created_at", { ascending: true });
+      if (error) throw new Error(error.message);
+      return (data ?? []).map((m) => ({
+        id: m.id,
+        role: m.role as "user" | "assistant",
+        parts: Array.isArray(m.parts) ? m.parts : [{ type: "text", text: "" }],
+      }));
+    },
   });
 
   const initial = useMemo<UIMessage[]>(
@@ -148,7 +156,15 @@ function ChatPage() {
     const idx = messages.length - 1 - lastIdx;
     setMessages(messages.slice(0, idx));
     try {
-      await delLastAssistant({ data: { threadId } });
+      const { data: rows } = await supabase
+        .from("messages")
+        .select("id")
+        .eq("thread_id", threadId)
+        .eq("role", "assistant")
+        .order("created_at", { ascending: false })
+        .limit(1);
+      const id = rows?.[0]?.id;
+      if (id) await supabase.from("messages").delete().eq("id", id);
     } catch {
       /* non-fatal */
     }
