@@ -4,6 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { listThreads, createThread, deleteThread } from "@/lib/chat.functions";
+type ThreadParam = { threadId: string };
 import { Button } from "@/components/ui/button";
 import { Plus, MessageSquare, Trash2, LogOut, Menu, X } from "lucide-react";
 import logo from "@/assets/tgpt-logo.png";

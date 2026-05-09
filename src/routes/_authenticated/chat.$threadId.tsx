@@ -24,7 +24,7 @@ import logo from "@/assets/tgpt-logo.png";
 
 const search = z.object({ q: z.string().optional() });
 
-export const Route = createFileRoute("/_authenticated/c/$threadId")({
+export const Route = createFileRoute("/_authenticated/chat/$threadId")({
   validateSearch: search,
   component: ChatPage,
 });
@@ -57,9 +57,11 @@ function ChatPage() {
         prepareSendMessagesRequest: async ({ messages, body }) => {
           const { data } = await supabase.auth.getSession();
           const token = data.session?.access_token;
+          const headers: Record<string, string> = {};
+          if (token) headers.Authorization = `Bearer ${token}`;
           return {
-            headers: token ? { Authorization: `Bearer ${token}` } : {},
-            body: { messages, threadId, ...body },
+            headers,
+            body: { messages, threadId, ...(body ?? {}) },
           };
         },
       }),
@@ -75,12 +77,10 @@ function ChatPage() {
   const [input, setInput] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // Focus on mount and after streaming
   useEffect(() => {
     if (status === "ready" || status === undefined) textareaRef.current?.focus();
   }, [status, threadId]);
 
-  // Auto-send seeded prompt from suggestion buttons (only once per thread, only if no messages)
   useEffect(() => {
     if (!q || autoSentRef.current === threadId) return;
     if (isLoading) return;
@@ -92,8 +92,7 @@ function ChatPage() {
     sendMessage({ text: q });
   }, [q, threadId, isLoading, initial.length, sendMessage]);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = () => {
     const text = input.trim();
     if (!text || status === "submitted" || status === "streaming") return;
     sendMessage({ text });
@@ -108,27 +107,32 @@ function ChatPage() {
         <ConversationContent className="max-w-3xl mx-auto w-full px-4 py-6">
           {messages.length === 0 && !isLoading && (
             <div className="flex flex-col items-center justify-center py-20 text-center">
-              <img src={logo} alt="T-GPT" className="h-16 w-16 mb-4 opacity-90" width={64} height={64} />
+              <img
+                src={logo}
+                alt="T-GPT"
+                className="h-16 w-16 mb-4 opacity-90"
+                width={64}
+                height={64}
+              />
               <p className="text-muted-foreground">Ask me anything to get started.</p>
             </div>
           )}
-          {messages.map((m) => (
-            <Message key={m.id} from={m.role}>
-              {m.role === "assistant" ? (
-                <MessageResponse>
-                  {m.parts
-                    .map((p) => (p.type === "text" ? (p as { text: string }).text : ""))
-                    .join("")}
-                </MessageResponse>
-              ) : (
-                <MessageContent variant="contained" className="bg-chat-user text-chat-user-foreground shadow-glow">
-                  {m.parts
-                    .map((p) => (p.type === "text" ? (p as { text: string }).text : ""))
-                    .join("")}
-                </MessageContent>
-              )}
-            </Message>
-          ))}
+          {messages.map((m) => {
+            const text = m.parts
+              .map((p) => (p.type === "text" ? (p as { text: string }).text : ""))
+              .join("");
+            return (
+              <Message key={m.id} from={m.role}>
+                {m.role === "assistant" ? (
+                  <MessageResponse>{text}</MessageResponse>
+                ) : (
+                  <MessageContent className="!bg-chat-user !text-chat-user-foreground shadow-glow">
+                    {text}
+                  </MessageContent>
+                )}
+              </Message>
+            );
+          })}
           {showShimmer && (
             <div className="px-4 py-2">
               <Shimmer>T-GPT is thinking...</Shimmer>

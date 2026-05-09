@@ -25,12 +25,22 @@ function HomePage() {
   const start = async (seed?: string) => {
     const t = await create({ data: { title: seed?.slice(0, 60) } });
     qc.invalidateQueries({ queryKey: ["threads"] });
-    navigate({ to: "/c/$threadId", params: { threadId: t.id }, search: seed ? { q: seed } : undefined });
+    navigate({
+      to: "/chat/$threadId",
+      params: { threadId: t.id },
+      search: seed ? { q: seed } : {},
+    });
   };
 
   return (
-    <div className="flex-1 flex flex-col items-center justify-center px-6 py-12">
-      <img src={logo} alt="T-GPT" className="h-20 w-20 mb-6 drop-shadow-[0_0_30px_rgba(217,70,239,0.5)]" width={80} height={80} />
+    <div className="flex-1 flex flex-col items-center justify-center px-6 py-12 overflow-y-auto">
+      <img
+        src={logo}
+        alt="T-GPT"
+        className="h-20 w-20 mb-6 drop-shadow-[0_0_30px_rgba(217,70,239,0.5)]"
+        width={80}
+        height={80}
+      />
       <h1 className="font-display text-4xl md:text-5xl font-bold text-center mb-2">
         Hello, I'm <span className="text-gradient">T-GPT</span>
       </h1>
