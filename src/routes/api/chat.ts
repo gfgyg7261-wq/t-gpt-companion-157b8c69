@@ -26,8 +26,20 @@ export const Route = createFileRoute("/api/chat")({
         if (claimsErr || !claimsData?.claims?.sub) return new Response("Unauthorized", { status: 401 });
         const userId = claimsData.claims.sub as string;
 
-        const body = (await request.json()) as { messages: UIMessage[]; threadId: string };
+        const body = (await request.json()) as {
+          messages: UIMessage[];
+          threadId: string;
+          model?: string;
+        };
         const { messages, threadId } = body;
+        const ALLOWED = new Set([
+          "google/gemini-3-flash-preview",
+          "google/gemini-2.5-flash",
+          "google/gemini-2.5-pro",
+          "openai/gpt-5-mini",
+          "openai/gpt-5",
+        ]);
+        const modelId = body.model && ALLOWED.has(body.model) ? body.model : "google/gemini-3-flash-preview";
         if (!Array.isArray(messages) || !threadId) {
           return new Response("Bad request", { status: 400 });
         }
@@ -61,12 +73,12 @@ export const Route = createFileRoute("/api/chat")({
         }
 
         const gateway = createLovableAiGatewayProvider(apiKey);
-        const model = gateway("google/gemini-3-flash-preview");
+        const model = gateway(modelId);
 
         const result = streamText({
           model,
           system:
-            "You are T-GPT, a friendly, witty, and helpful AI assistant created for the T-GPT app. Be concise, use markdown when helpful, and embrace a vibrant, energetic tone.",
+            "You are T-GPT, a bold, witty, knowledgeable AI assistant. Format with rich markdown: use headings, bold, lists, tables, and fenced code blocks with language tags. Be concise but thorough. When you don't know, say so. Keep an energetic, friendly voice.",
           messages: await convertToModelMessages(messages),
         });
 
@@ -83,6 +95,12 @@ export const Route = createFileRoute("/api/chat")({
             } catch (e) {
               console.error("Failed to save assistant message", e);
             }
+          },
+          onError: (error) => {
+            const msg = error instanceof Error ? error.message : String(error);
+            if (msg.includes("429")) return "Rate limit reached. Please wait a moment and try again.";
+            if (msg.includes("402")) return "AI credits exhausted. Please add credits in Lovable Cloud settings.";
+            return msg;
           },
         });
       },
