@@ -19,6 +19,7 @@ type ThreadRow = { id: string; title: string; updated_at: string };
 
 export const Route = createFileRoute("/_authenticated")({
   beforeLoad: async () => {
+    if (typeof window === "undefined") return;
     const { data, error } = await supabase.auth.getUser();
     if (error || !data.user) throw redirect({ to: "/login" });
   },
