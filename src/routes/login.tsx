@@ -29,23 +29,33 @@ function LoginPage() {
 
   const handleEmail = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (loading) return;
     setLoading(true);
     try {
       if (mode === "signup") {
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
           email,
           password,
           options: { emailRedirectTo: `${window.location.origin}/` },
         });
         if (error) throw error;
-        toast.success("Account created! Check your email to confirm.");
+        // Auto-confirm is enabled, so a session should exist immediately
+        if (data.session) {
+          toast.success("Welcome to T-GPT!");
+          navigate({ to: "/" });
+        } else {
+          toast.success("Account created! Check your email to confirm, then sign in.");
+          setMode("signin");
+        }
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
+        toast.success("Welcome back!");
         navigate({ to: "/" });
       }
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : "Something went wrong");
+      const msg = err instanceof Error ? err.message : "Something went wrong";
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
