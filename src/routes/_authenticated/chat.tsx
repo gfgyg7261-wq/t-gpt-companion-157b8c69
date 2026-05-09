@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import logo from "@/assets/tgpt-logo.png";
 import { Sparkles, Code, Lightbulb, BookOpen } from "lucide-react";
 
-export const Route = createFileRoute("/_authenticated/")({
+export const Route = createFileRoute("/_authenticated/chat")({
   component: HomePage,
 });
 
