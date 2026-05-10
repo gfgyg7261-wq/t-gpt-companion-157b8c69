@@ -11,8 +11,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Plus, MessageSquare, Trash2, LogOut, Menu, X, Search, Pencil, MoreHorizontal, User } from "lucide-react";
+import { Plus, MessageSquare, Trash2, LogOut, Menu, X, Search, Pencil, MoreHorizontal, User, Wand2, Crown } from "lucide-react";
 import { toast } from "sonner";
+import { UpgradeDialog } from "@/components/upgrade-dialog";
 import logo from "@/assets/tgpt-logo.png";
 
 type ThreadRow = { id: string; title: string; updated_at: string };
@@ -34,6 +35,7 @@ function AuthLayout() {
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState("");
   const [email, setEmail] = useState<string>("");
+  const [upgradeOpen, setUpgradeOpen] = useState(false);
   const path = useRouterState({ select: (s) => s.location.pathname });
 
   const { data: threads = [] } = useQuery({
@@ -138,10 +140,23 @@ function AuthLayout() {
             </Button>
           </div>
 
-          <div className="px-3 pb-2">
+          <div className="px-3 pb-2 space-y-2">
             <Button onClick={handleNew} className="w-full bg-gradient-brand text-primary-foreground border-0 shadow-glow font-semibold">
               <Plus className="h-4 w-4 mr-1" /> New chat
             </Button>
+            <Link
+              to="/builder"
+              className={`w-full flex items-center justify-center gap-1.5 text-sm font-semibold rounded-md py-2 border transition ${
+                path.startsWith("/builder")
+                  ? "bg-primary/10 border-primary/40 text-primary"
+                  : "border-border hover:border-primary/40 hover:bg-primary/5"
+              }`}
+            >
+              <Wand2 className="h-4 w-4" /> Website Builder
+              <span className="text-[9px] uppercase tracking-wider bg-primary/20 text-primary px-1.5 py-0.5 rounded-full font-bold ml-1">
+                New
+              </span>
+            </Link>
           </div>
 
           <div className="px-3 pb-2 relative">
@@ -239,6 +254,10 @@ function AuthLayout() {
                   <User className="h-3.5 w-3.5 mr-2" /> {email || "Signed in"}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => setUpgradeOpen(true)}>
+                  <Crown className="h-3.5 w-3.5 mr-2 text-primary" /> Upgrade plan
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleSignOut} className="text-destructive focus:text-destructive">
                   <LogOut className="h-3.5 w-3.5 mr-2" /> Sign out
                 </DropdownMenuItem>
@@ -247,6 +266,8 @@ function AuthLayout() {
           </div>
         </div>
       </aside>
+
+      <UpgradeDialog open={upgradeOpen} onOpenChange={setUpgradeOpen} />
 
       {/* Main */}
       <main className="flex-1 flex flex-col min-w-0 relative">
