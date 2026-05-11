@@ -11,7 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Plus, MessageSquare, Trash2, LogOut, Menu, X, Search, Pencil, MoreHorizontal, User, Wand2, Crown } from "lucide-react";
+import { Plus, MessageSquare, Trash2, LogOut, Menu, X, Search, Pencil, MoreHorizontal, User, Wand2, Crown, ShieldAlert, Info } from "lucide-react";
 import { toast } from "sonner";
 import { UpgradeDialog } from "@/components/upgrade-dialog";
 import logo from "@/assets/tgpt-logo.png";
