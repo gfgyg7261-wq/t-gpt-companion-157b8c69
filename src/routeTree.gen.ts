@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as AboutRouteImport } from './routes/about'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiGuestChatRouteImport } from './routes/api/guest-chat'
@@ -17,11 +18,18 @@ import { Route as ApiChatRouteImport } from './routes/api/chat'
 import { Route as ApiBuilderRouteImport } from './routes/api/builder'
 import { Route as AuthenticatedChatRouteImport } from './routes/_authenticated/chat'
 import { Route as AuthenticatedBuilderRouteImport } from './routes/_authenticated/builder'
+import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedChatThreadIdRouteImport } from './routes/_authenticated/chat.$threadId'
+import { Route as AuthenticatedBuilderThreadIdRouteImport } from './routes/_authenticated/builder.$threadId'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AboutRoute = AboutRouteImport.update({
+  id: '/about',
+  path: '/about',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedRoute = AuthenticatedRouteImport.update({
@@ -58,82 +66,112 @@ const AuthenticatedBuilderRoute = AuthenticatedBuilderRouteImport.update({
   path: '/builder',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedChatThreadIdRoute =
   AuthenticatedChatThreadIdRouteImport.update({
     id: '/$threadId',
     path: '/$threadId',
     getParentRoute: () => AuthenticatedChatRoute,
   } as any)
+const AuthenticatedBuilderThreadIdRoute =
+  AuthenticatedBuilderThreadIdRouteImport.update({
+    id: '/$threadId',
+    path: '/$threadId',
+    getParentRoute: () => AuthenticatedBuilderRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/about': typeof AboutRoute
   '/login': typeof LoginRoute
-  '/builder': typeof AuthenticatedBuilderRoute
+  '/admin': typeof AuthenticatedAdminRoute
+  '/builder': typeof AuthenticatedBuilderRouteWithChildren
   '/chat': typeof AuthenticatedChatRouteWithChildren
   '/api/builder': typeof ApiBuilderRoute
   '/api/chat': typeof ApiChatRoute
   '/api/guest-chat': typeof ApiGuestChatRoute
+  '/builder/$threadId': typeof AuthenticatedBuilderThreadIdRoute
   '/chat/$threadId': typeof AuthenticatedChatThreadIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/about': typeof AboutRoute
   '/login': typeof LoginRoute
-  '/builder': typeof AuthenticatedBuilderRoute
+  '/admin': typeof AuthenticatedAdminRoute
+  '/builder': typeof AuthenticatedBuilderRouteWithChildren
   '/chat': typeof AuthenticatedChatRouteWithChildren
   '/api/builder': typeof ApiBuilderRoute
   '/api/chat': typeof ApiChatRoute
   '/api/guest-chat': typeof ApiGuestChatRoute
+  '/builder/$threadId': typeof AuthenticatedBuilderThreadIdRoute
   '/chat/$threadId': typeof AuthenticatedChatThreadIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteWithChildren
+  '/about': typeof AboutRoute
   '/login': typeof LoginRoute
-  '/_authenticated/builder': typeof AuthenticatedBuilderRoute
+  '/_authenticated/admin': typeof AuthenticatedAdminRoute
+  '/_authenticated/builder': typeof AuthenticatedBuilderRouteWithChildren
   '/_authenticated/chat': typeof AuthenticatedChatRouteWithChildren
   '/api/builder': typeof ApiBuilderRoute
   '/api/chat': typeof ApiChatRoute
   '/api/guest-chat': typeof ApiGuestChatRoute
+  '/_authenticated/builder/$threadId': typeof AuthenticatedBuilderThreadIdRoute
   '/_authenticated/chat/$threadId': typeof AuthenticatedChatThreadIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/about'
     | '/login'
+    | '/admin'
     | '/builder'
     | '/chat'
     | '/api/builder'
     | '/api/chat'
     | '/api/guest-chat'
+    | '/builder/$threadId'
     | '/chat/$threadId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/about'
     | '/login'
+    | '/admin'
     | '/builder'
     | '/chat'
     | '/api/builder'
     | '/api/chat'
     | '/api/guest-chat'
+    | '/builder/$threadId'
     | '/chat/$threadId'
   id:
     | '__root__'
     | '/'
     | '/_authenticated'
+    | '/about'
     | '/login'
+    | '/_authenticated/admin'
     | '/_authenticated/builder'
     | '/_authenticated/chat'
     | '/api/builder'
     | '/api/chat'
     | '/api/guest-chat'
+    | '/_authenticated/builder/$threadId'
     | '/_authenticated/chat/$threadId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
+  AboutRoute: typeof AboutRoute
   LoginRoute: typeof LoginRoute
   ApiBuilderRoute: typeof ApiBuilderRoute
   ApiChatRoute: typeof ApiChatRoute
@@ -147,6 +185,13 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/about': {
+      id: '/about'
+      path: '/about'
+      fullPath: '/about'
+      preLoaderRoute: typeof AboutRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated': {
@@ -198,6 +243,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedBuilderRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/admin': {
+      id: '/_authenticated/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AuthenticatedAdminRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/chat/$threadId': {
       id: '/_authenticated/chat/$threadId'
       path: '/$threadId'
@@ -205,8 +257,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedChatThreadIdRouteImport
       parentRoute: typeof AuthenticatedChatRoute
     }
+    '/_authenticated/builder/$threadId': {
+      id: '/_authenticated/builder/$threadId'
+      path: '/$threadId'
+      fullPath: '/builder/$threadId'
+      preLoaderRoute: typeof AuthenticatedBuilderThreadIdRouteImport
+      parentRoute: typeof AuthenticatedBuilderRoute
+    }
   }
 }
+
+interface AuthenticatedBuilderRouteChildren {
+  AuthenticatedBuilderThreadIdRoute: typeof AuthenticatedBuilderThreadIdRoute
+}
+
+const AuthenticatedBuilderRouteChildren: AuthenticatedBuilderRouteChildren = {
+  AuthenticatedBuilderThreadIdRoute: AuthenticatedBuilderThreadIdRoute,
+}
+
+const AuthenticatedBuilderRouteWithChildren =
+  AuthenticatedBuilderRoute._addFileChildren(AuthenticatedBuilderRouteChildren)
 
 interface AuthenticatedChatRouteChildren {
   AuthenticatedChatThreadIdRoute: typeof AuthenticatedChatThreadIdRoute
@@ -220,12 +290,14 @@ const AuthenticatedChatRouteWithChildren =
   AuthenticatedChatRoute._addFileChildren(AuthenticatedChatRouteChildren)
 
 interface AuthenticatedRouteChildren {
-  AuthenticatedBuilderRoute: typeof AuthenticatedBuilderRoute
+  AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
+  AuthenticatedBuilderRoute: typeof AuthenticatedBuilderRouteWithChildren
   AuthenticatedChatRoute: typeof AuthenticatedChatRouteWithChildren
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
-  AuthenticatedBuilderRoute: AuthenticatedBuilderRoute,
+  AuthenticatedAdminRoute: AuthenticatedAdminRoute,
+  AuthenticatedBuilderRoute: AuthenticatedBuilderRouteWithChildren,
   AuthenticatedChatRoute: AuthenticatedChatRouteWithChildren,
 }
 
@@ -236,6 +308,7 @@ const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
+  AboutRoute: AboutRoute,
   LoginRoute: LoginRoute,
   ApiBuilderRoute: ApiBuilderRoute,
   ApiChatRoute: ApiChatRoute,

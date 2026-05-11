@@ -1,14 +1,15 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Check, Sparkles, Crown, Rocket } from "lucide-react";
-import { toast } from "sonner";
+import { Check, Sparkles, Crown, Rocket, ExternalLink } from "lucide-react";
+
+const DISCORD_URL = "https://discord.gg/7Dr7PgpqJ";
 
 const TIERS = [
   {
     name: "Free",
     price: "$0",
     icon: Sparkles,
-    features: ["Unlimited chats", "Standard models", "Basic website builder", "Community support"],
+    features: ["Unlimited normal chats", "5 Website Builder credits / day", "Standard models", "Community support"],
     cta: "Current plan",
     disabled: true,
   },
@@ -17,19 +18,20 @@ const TIERS = [
     price: "$19",
     icon: Crown,
     highlight: true,
-    features: ["Everything in Free", "Premium GPT-5 & Gemini Pro", "Unlimited site builds", "Custom domains", "Priority support"],
-    cta: "Upgrade to Pro",
+    features: ["Everything in Free", "Tiger-5 model access", "Tiger Pro reasoning", "Unlimited builder credits", "Custom domains", "Priority support"],
+    cta: "Get Pro on Discord",
   },
   {
     name: "Team",
     price: "$49",
     icon: Rocket,
-    features: ["Everything in Pro", "Workspace collaboration", "API access", "SSO & audit logs", "Dedicated support"],
-    cta: "Upgrade to Team",
+    features: ["Everything in Pro", "Workspace collaboration", "Tiger Pro Max", "API access", "SSO & audit logs", "Dedicated support"],
+    cta: "Get Team on Discord",
   },
 ];
 
 export function UpgradeDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (v: boolean) => void }) {
+  const goDiscord = () => window.open(DISCORD_URL, "_blank", "noopener,noreferrer");
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl">
@@ -37,7 +39,9 @@ export function UpgradeDialog({ open, onOpenChange }: { open: boolean; onOpenCha
           <DialogTitle className="text-2xl">
             Upgrade <span className="text-gradient">T-GPT</span>
           </DialogTitle>
-          <DialogDescription>Unlock premium models, the full website builder, and more.</DialogDescription>
+          <DialogDescription>
+            To purchase Pro or Team, join our Discord — our team will set you up instantly.
+          </DialogDescription>
         </DialogHeader>
         <div className="grid md:grid-cols-3 gap-4 mt-2">
           {TIERS.map((tier) => (
@@ -57,8 +61,7 @@ export function UpgradeDialog({ open, onOpenChange }: { open: boolean; onOpenCha
                 <h3 className="font-bold text-lg">{tier.name}</h3>
               </div>
               <p className="mt-2 text-3xl font-bold">
-                {tier.price}
-                <span className="text-sm font-normal text-muted-foreground">/mo</span>
+                {tier.price}<span className="text-sm font-normal text-muted-foreground">/mo</span>
               </p>
               <ul className="mt-4 space-y-2 text-sm flex-1">
                 {tier.features.map((f) => (
@@ -70,15 +73,19 @@ export function UpgradeDialog({ open, onOpenChange }: { open: boolean; onOpenCha
               </ul>
               <Button
                 disabled={tier.disabled}
-                onClick={() => toast.info("Billing coming soon — payments not enabled yet.")}
+                onClick={goDiscord}
                 className={`mt-5 w-full ${tier.highlight ? "bg-gradient-brand text-primary-foreground border-0 shadow-glow" : ""}`}
                 variant={tier.highlight ? "default" : "outline"}
               >
                 {tier.cta}
+                {!tier.disabled && <ExternalLink className="h-3.5 w-3.5 ml-1" />}
               </Button>
             </div>
           ))}
         </div>
+        <p className="text-center text-xs text-muted-foreground mt-2">
+          Powered by <a href="https://www.tigerhost.space/" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">TigerHost</a>
+        </p>
       </DialogContent>
     </Dialog>
   );
