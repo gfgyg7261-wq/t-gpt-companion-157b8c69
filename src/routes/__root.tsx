@@ -72,14 +72,18 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
+      { title: "T-GPT" },
+      { name: "description", content: "Stop guessing. Start converting. T-GPT delivers tailor-made ad creatives and instant, optimized campaigns by understanding the exact context of your customer's" },
       { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { property: "og:title", content: "T-GPT" },
+      { property: "og:description", content: "Stop guessing. Start converting. T-GPT delivers tailor-made ad creatives and instant, optimized campaigns by understanding the exact context of your customer's" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:site", content: "@Lovable" },
+      { name: "twitter:title", content: "T-GPT" },
+      { name: "twitter:description", content: "Stop guessing. Start converting. T-GPT delivers tailor-made ad creatives and instant, optimized campaigns by understanding the exact context of your customer's" },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/36c4f54b-090b-4775-9c8c-5dcdaa4b75f2/id-preview-d3baf716--7b38ae22-79fe-48ce-8f0a-d57b5c90e812.lovable.app-1778475042874.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/36c4f54b-090b-4775-9c8c-5dcdaa4b75f2/id-preview-d3baf716--7b38ae22-79fe-48ce-8f0a-d57b5c90e812.lovable.app-1778475042874.png" },
     ],
     links: [
       {
