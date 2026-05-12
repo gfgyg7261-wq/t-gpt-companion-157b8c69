@@ -13,46 +13,35 @@ export const Route = createFileRoute("/_authenticated/admin")({
   beforeLoad: async () => {
     if (typeof window === "undefined") return;
     const { data: u } = await supabase.auth.getUser();
-    if (!u.user) throw redirect({ to: "/login" });
+    if (!u.user) throw redirect({ to: "/admin-login" });
     const { data: roles } = await supabase
       .from("user_roles").select("role").eq("user_id", u.user.id).eq("role", "admin").maybeSingle();
-    if (!roles) throw redirect({ to: "/chat" });
+    if (!roles) throw redirect({ to: "/admin-login" });
   },
   component: AdminPanel,
 });
 
-type ProfileRow = { id: string; display_name: string | null; created_at: string };
-type CreditRow = { user_id: string; balance: number };
+type AdminUserRow = {
+  id: string;
+  email: string;
+  display_name: string;
+  credit_balance: number;
+  is_admin: boolean;
+  last_sign_in_at: string | null;
+  created_at: string;
+};
 
 function AdminPanel() {
   const navigate = useNavigate();
   const qc = useQueryClient();
   const [search, setSearch] = useState("");
 
-  const { data: profiles = [] } = useQuery({
-    queryKey: ["admin-profiles"],
-    queryFn: async (): Promise<ProfileRow[]> => {
-      const { data, error } = await supabase.from("profiles").select("id,display_name,created_at").order("created_at", { ascending: false });
+  const { data: users = [], isLoading: usersLoading } = useQuery({
+    queryKey: ["admin-users"],
+    queryFn: async (): Promise<AdminUserRow[]> => {
+      const { data, error } = await supabase.rpc("admin_list_users");
       if (error) throw new Error(error.message);
-      return data ?? [];
-    },
-  });
-
-  const { data: credits = [] } = useQuery({
-    queryKey: ["admin-credits"],
-    queryFn: async (): Promise<CreditRow[]> => {
-      const { data, error } = await supabase.from("credits").select("user_id,balance");
-      if (error) throw new Error(error.message);
-      return data ?? [];
-    },
-  });
-
-  const { data: roles = [] } = useQuery({
-    queryKey: ["admin-roles"],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("user_roles").select("user_id,role");
-      if (error) throw new Error(error.message);
-      return data ?? [];
+      return (data ?? []) as AdminUserRow[];
     },
   });
 
@@ -74,20 +63,15 @@ function AdminPanel() {
     },
   });
 
-  const adjustCredits = async (userId: string, delta: number) => {
-    const cur = credits.find((c) => c.user_id === userId)?.balance ?? 0;
-    const next = Math.max(0, cur + delta);
-    const { error } = await supabase.from("credits").update({ balance: next, updated_at: new Date().toISOString() }).eq("user_id", userId);
-    if (error) return toast.error(error.message);
-    toast.success(`Set to ${next} credits`);
-    qc.invalidateQueries({ queryKey: ["admin-credits"] });
-  };
-
   const setCreditsTo = async (userId: string, value: number) => {
     const { error } = await supabase.from("credits").upsert({ user_id: userId, balance: value, updated_at: new Date().toISOString() });
     if (error) return toast.error(error.message);
     toast.success(`Credits set to ${value}`);
-    qc.invalidateQueries({ queryKey: ["admin-credits"] });
+    qc.invalidateQueries({ queryKey: ["admin-users"] });
+  };
+
+  const adjustCredits = async (userId: string, delta: number, current: number) => {
+    await setCreditsTo(userId, Math.max(0, current + delta));
   };
 
   const toggleAdmin = async (userId: string, isAdmin: boolean) => {
@@ -100,7 +84,7 @@ function AdminPanel() {
       if (error) return toast.error(error.message);
       toast.success("Made admin");
     }
-    qc.invalidateQueries({ queryKey: ["admin-roles"] });
+    qc.invalidateQueries({ queryKey: ["admin-users"] });
   };
 
   const deleteThread = async (id: string) => {
@@ -116,14 +100,12 @@ function AdminPanel() {
     qc.invalidateQueries({ queryKey: ["admin-builds"] });
   };
 
-  const filtered = profiles.filter((p) => {
+  const filtered = users.filter((p) => {
     const q = search.toLowerCase();
-    return !q || (p.display_name ?? "").toLowerCase().includes(q) || p.id.toLowerCase().includes(q);
+    return !q || p.display_name.toLowerCase().includes(q) || (p.email ?? "").toLowerCase().includes(q) || p.id.toLowerCase().includes(q);
   });
 
-  const adminIds = new Set(roles.filter((r) => r.role === "admin").map((r) => r.user_id));
-  const balanceOf = (uid: string) => credits.find((c) => c.user_id === uid)?.balance ?? 0;
-  const nameOf = (uid: string) => profiles.find((p) => p.id === uid)?.display_name ?? uid.slice(0, 8);
+  const nameOf = (uid: string) => users.find((p) => p.id === uid)?.display_name ?? uid.slice(0, 8);
 
   return (
     <div className="flex-1 overflow-y-auto p-6 max-w-6xl mx-auto w-full">
@@ -148,34 +130,41 @@ function AdminPanel() {
         </TabsList>
 
         <TabsContent value="users" className="mt-4 space-y-3">
-          <Input placeholder="Search by name or user id…" value={search} onChange={(e) => setSearch(e.target.value)} className="max-w-md" />
+          <Input placeholder="Search by name, email, or user id…" value={search} onChange={(e) => setSearch(e.target.value)} className="max-w-md" />
+          {usersLoading && <p className="text-sm text-muted-foreground">Loading users…</p>}
           <div className="border border-border rounded-xl overflow-hidden">
             <table className="w-full text-sm">
               <thead className="bg-muted/40 text-xs uppercase">
                 <tr>
                   <th className="text-left p-2">User</th>
+                  <th className="text-left p-2">Email</th>
                   <th className="text-left p-2">Role</th>
                   <th className="text-left p-2">Credits</th>
+                  <th className="text-left p-2">Last sign-in</th>
                   <th className="text-right p-2">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {filtered.map((p) => {
-                  const isAdmin = adminIds.has(p.id);
-                  const bal = balanceOf(p.id);
+                  const isAdmin = p.is_admin;
+                  const bal = p.credit_balance;
                   return (
                     <tr key={p.id} className="border-t border-border hover:bg-muted/20">
                       <td className="p-2">
-                        <p className="font-medium">{p.display_name ?? "—"}</p>
-                        <p className="text-[10px] font-mono text-muted-foreground">{p.id}</p>
+                        <p className="font-medium">{p.display_name}</p>
+                        <p className="text-[10px] font-mono text-muted-foreground">{p.id.slice(0, 13)}…</p>
                       </td>
+                      <td className="p-2 text-xs">{p.email}</td>
                       <td className="p-2">
                         {isAdmin ? <span className="text-primary font-bold">Admin</span> : "User"}
                       </td>
                       <td className="p-2 font-mono">{bal}</td>
-                      <td className="p-2 text-right space-x-1">
-                        <Button size="sm" variant="ghost" onClick={() => adjustCredits(p.id, -1)}><Minus className="h-3 w-3" /></Button>
-                        <Button size="sm" variant="ghost" onClick={() => adjustCredits(p.id, 1)}><Plus className="h-3 w-3" /></Button>
+                      <td className="p-2 text-[10px] text-muted-foreground">
+                        {p.last_sign_in_at ? new Date(p.last_sign_in_at).toLocaleString() : "Never"}
+                      </td>
+                      <td className="p-2 text-right space-x-1 whitespace-nowrap">
+                        <Button size="sm" variant="ghost" onClick={() => adjustCredits(p.id, -1, bal)}><Minus className="h-3 w-3" /></Button>
+                        <Button size="sm" variant="ghost" onClick={() => adjustCredits(p.id, 1, bal)}><Plus className="h-3 w-3" /></Button>
                         <Button size="sm" variant="outline" onClick={() => {
                           const v = prompt("Set credits to:", String(bal));
                           if (v !== null) setCreditsTo(p.id, Math.max(0, parseInt(v) || 0));
@@ -189,7 +178,9 @@ function AdminPanel() {
                 })}
               </tbody>
             </table>
+            {!usersLoading && filtered.length === 0 && <p className="p-4 text-center text-sm text-muted-foreground">No users.</p>}
           </div>
+          <p className="text-[10px] text-muted-foreground italic">Note: passwords are securely hashed and cannot be displayed by anyone, including admins.</p>
         </TabsContent>
 
         <TabsContent value="chats" className="mt-4">

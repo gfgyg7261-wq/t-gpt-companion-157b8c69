@@ -136,6 +136,13 @@ export type Database = {
             referencedRelation: "threads"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "messages_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "admin_users_view"
+            referencedColumns: ["id"]
+          },
         ]
       }
       profiles: {
@@ -154,7 +161,15 @@ export type Database = {
           display_name?: string | null
           id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_id_fkey"
+            columns: ["id"]
+            isOneToOne: true
+            referencedRelation: "admin_users_view"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       threads: {
         Row: {
@@ -178,7 +193,15 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "threads_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "admin_users_view"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
@@ -203,9 +226,32 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      admin_users_view: {
+        Row: {
+          created_at: string | null
+          credit_balance: number | null
+          display_name: string | null
+          email: string | null
+          id: string | null
+          is_admin: boolean | null
+          last_sign_in_at: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
+      admin_list_users: {
+        Args: never
+        Returns: {
+          created_at: string
+          credit_balance: number
+          display_name: string
+          email: string
+          id: string
+          is_admin: boolean
+          last_sign_in_at: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

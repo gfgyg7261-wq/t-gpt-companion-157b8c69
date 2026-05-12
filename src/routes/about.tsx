@@ -53,7 +53,7 @@ function AboutPage() {
           ))}
         </section>
 
-        <section className="rounded-3xl border border-primary/30 bg-gradient-to-br from-primary/10 to-transparent p-8 md:p-12 mb-16">
+        <section className="rounded-3xl border border-primary/30 bg-gradient-to-br from-primary/10 to-transparent p-8 md:p-12 mb-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
           <div className="flex items-center gap-3 mb-4">
             <Server className="h-7 w-7 text-primary" />
             <h2 className="font-display text-3xl font-bold">About TigerHost</h2>
@@ -69,6 +69,18 @@ function AboutPage() {
               <Globe className="h-4 w-4 mr-2" /> Visit TigerHost
             </Button>
           </a>
+        </section>
+
+        <section className="rounded-3xl border border-primary/40 bg-card/60 p-8 md:p-12 mb-16 text-center animate-in fade-in zoom-in-95 duration-700">
+          <div className="inline-flex items-center justify-center h-20 w-20 rounded-full bg-gradient-brand text-primary-foreground text-3xl font-display font-bold shadow-glow mb-4">
+            AJ
+          </div>
+          <h2 className="font-display text-3xl font-bold mb-2">
+            Created by <span className="text-gradient">Al-Jabir</span>
+          </h2>
+          <p className="text-sm text-muted-foreground max-w-xl mx-auto">
+            T-GPT was designed and built by <strong className="text-foreground">Al-Jabir</strong>, founder & owner of TigerHost. Every line, every model, every pixel — engineered to give you a free, powerful AI you can actually own.
+          </p>
         </section>
 
         <section className="text-center">
