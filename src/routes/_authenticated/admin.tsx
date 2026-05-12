@@ -130,34 +130,41 @@ function AdminPanel() {
         </TabsList>
 
         <TabsContent value="users" className="mt-4 space-y-3">
-          <Input placeholder="Search by name or user id…" value={search} onChange={(e) => setSearch(e.target.value)} className="max-w-md" />
+          <Input placeholder="Search by name, email, or user id…" value={search} onChange={(e) => setSearch(e.target.value)} className="max-w-md" />
+          {usersLoading && <p className="text-sm text-muted-foreground">Loading users…</p>}
           <div className="border border-border rounded-xl overflow-hidden">
             <table className="w-full text-sm">
               <thead className="bg-muted/40 text-xs uppercase">
                 <tr>
                   <th className="text-left p-2">User</th>
+                  <th className="text-left p-2">Email</th>
                   <th className="text-left p-2">Role</th>
                   <th className="text-left p-2">Credits</th>
+                  <th className="text-left p-2">Last sign-in</th>
                   <th className="text-right p-2">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {filtered.map((p) => {
-                  const isAdmin = adminIds.has(p.id);
-                  const bal = balanceOf(p.id);
+                  const isAdmin = p.is_admin;
+                  const bal = p.credit_balance;
                   return (
                     <tr key={p.id} className="border-t border-border hover:bg-muted/20">
                       <td className="p-2">
-                        <p className="font-medium">{p.display_name ?? "—"}</p>
-                        <p className="text-[10px] font-mono text-muted-foreground">{p.id}</p>
+                        <p className="font-medium">{p.display_name}</p>
+                        <p className="text-[10px] font-mono text-muted-foreground">{p.id.slice(0, 13)}…</p>
                       </td>
+                      <td className="p-2 text-xs">{p.email}</td>
                       <td className="p-2">
                         {isAdmin ? <span className="text-primary font-bold">Admin</span> : "User"}
                       </td>
                       <td className="p-2 font-mono">{bal}</td>
-                      <td className="p-2 text-right space-x-1">
-                        <Button size="sm" variant="ghost" onClick={() => adjustCredits(p.id, -1)}><Minus className="h-3 w-3" /></Button>
-                        <Button size="sm" variant="ghost" onClick={() => adjustCredits(p.id, 1)}><Plus className="h-3 w-3" /></Button>
+                      <td className="p-2 text-[10px] text-muted-foreground">
+                        {p.last_sign_in_at ? new Date(p.last_sign_in_at).toLocaleString() : "Never"}
+                      </td>
+                      <td className="p-2 text-right space-x-1 whitespace-nowrap">
+                        <Button size="sm" variant="ghost" onClick={() => adjustCredits(p.id, -1, bal)}><Minus className="h-3 w-3" /></Button>
+                        <Button size="sm" variant="ghost" onClick={() => adjustCredits(p.id, 1, bal)}><Plus className="h-3 w-3" /></Button>
                         <Button size="sm" variant="outline" onClick={() => {
                           const v = prompt("Set credits to:", String(bal));
                           if (v !== null) setCreditsTo(p.id, Math.max(0, parseInt(v) || 0));
@@ -171,7 +178,9 @@ function AdminPanel() {
                 })}
               </tbody>
             </table>
+            {!usersLoading && filtered.length === 0 && <p className="p-4 text-center text-sm text-muted-foreground">No users.</p>}
           </div>
+          <p className="text-[10px] text-muted-foreground italic">Note: passwords are securely hashed and cannot be displayed by anyone, including admins.</p>
         </TabsContent>
 
         <TabsContent value="chats" className="mt-4">
