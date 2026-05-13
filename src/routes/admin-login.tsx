@@ -9,12 +9,16 @@ import { toast } from "sonner";
 import logo from "@/assets/tgpt-logo.png";
 
 export const Route = createFileRoute("/admin-login")({
+  validateSearch: (search) => ({
+    redirect: typeof search.redirect === "string" && search.redirect.startsWith("/") ? search.redirect : "/admin",
+  }),
   component: AdminLogin,
   head: () => ({ meta: [{ title: "Admin sign in — T-GPT" }] }),
 });
 
 function AdminLogin() {
   const navigate = useNavigate();
+  const { redirect } = Route.useSearch();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -24,9 +28,9 @@ function AdminLogin() {
     supabase.auth.getUser().then(async ({ data }) => {
       if (!data.user) return;
       const { data: r } = await supabase.from("user_roles").select("role").eq("user_id", data.user.id).eq("role", "admin").maybeSingle();
-      if (r) navigate({ to: "/admin" });
+      if (r) navigate({ to: redirect });
     });
-  }, [navigate]);
+  }, [navigate, redirect]);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,7 +46,7 @@ function AdminLogin() {
         throw new Error("This account is not an admin.");
       }
       toast.success("Welcome, admin");
-      navigate({ to: "/admin" });
+      navigate({ to: redirect });
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Sign-in failed";
       setError(msg);
