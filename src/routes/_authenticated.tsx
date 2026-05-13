@@ -19,10 +19,15 @@ import logo from "@/assets/tgpt-logo.png";
 type ThreadRow = { id: string; title: string; updated_at: string };
 
 export const Route = createFileRoute("/_authenticated")({
-  beforeLoad: async () => {
+  beforeLoad: async ({ location }) => {
     if (typeof window === "undefined") return;
     const { data, error } = await supabase.auth.getUser();
-    if (error || !data.user) throw redirect({ to: "/login" });
+    if (error || !data.user) {
+      throw redirect({
+        to: location.pathname.startsWith("/admin") ? "/admin-login" : "/login",
+        search: { redirect: location.href },
+      });
+    }
   },
   component: AuthLayout,
 });
@@ -35,6 +40,7 @@ function AuthLayout() {
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState("");
   const [email, setEmail] = useState<string>("");
+  const [authReady, setAuthReady] = useState(false);
   const [upgradeOpen, setUpgradeOpen] = useState(false);
   const path = useRouterState({ select: (s) => s.location.pathname });
 
@@ -48,6 +54,7 @@ function AuthLayout() {
       if (error) throw new Error(error.message);
       return data ?? [];
     },
+    enabled: authReady,
     refetchOnWindowFocus: false,
   });
 
@@ -59,11 +66,27 @@ function AuthLayout() {
       const { data } = await supabase.from("user_roles").select("role").eq("user_id", u.user.id).eq("role", "admin").maybeSingle();
       return !!data;
     },
+    enabled: authReady,
   });
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => setEmail(data.user?.email ?? ""));
-  }, []);
+    let alive = true;
+    supabase.auth.getUser().then(({ data, error }) => {
+      if (!alive) return;
+      if (error || !data.user) {
+        navigate({
+          to: path.startsWith("/admin") ? "/admin-login" : "/login",
+          search: { redirect: path },
+        });
+        return;
+      }
+      setEmail(data.user.email ?? "");
+      setAuthReady(true);
+    });
+    return () => {
+      alive = false;
+    };
+  }, [navigate, path]);
 
   const filtered = useMemo(
     () =>
@@ -126,12 +149,21 @@ function AuthLayout() {
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
+    setAuthReady(false);
     navigate({ to: "/login" });
   };
 
   useEffect(() => {
     if (typeof window !== "undefined" && window.innerWidth < 768) setOpen(false);
   }, []);
+
+  if (!authReady) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center bg-background">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-screen w-full overflow-hidden">

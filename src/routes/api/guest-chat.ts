@@ -1,7 +1,18 @@
 import { createFileRoute } from "@tanstack/react-router";
 import "@tanstack/react-start";
+import { getCookie, setCookie } from "@tanstack/react-start/server";
 import { convertToModelMessages, streamText, type UIMessage } from "ai";
 import { createLovableAiGatewayProvider } from "@/lib/ai-gateway";
+
+const GUEST_LIMIT = 5;
+const GUEST_COOKIE = "tgpt_guest_messages";
+
+function getGuestUsage() {
+  const today = new Date().toISOString().slice(0, 10);
+  const raw = getCookie(GUEST_COOKIE);
+  const [day, count] = raw?.split(":") ?? [];
+  return { today, count: day === today ? Number(count) || 0 : 0 };
+}
 
 export const Route = createFileRoute("/api/guest-chat")({
   server: {
@@ -14,11 +25,18 @@ export const Route = createFileRoute("/api/guest-chat")({
         const { messages } = body;
         if (!Array.isArray(messages)) return new Response("Bad request", { status: 400 });
 
-        // Hard cap server-side: count user messages, refuse if >5
-        const userCount = messages.filter((m) => m.role === "user").length;
-        if (userCount > 5) {
+        // Server-side daily cap, persisted in a secure cookie so refresh cannot reset it.
+        const usage = getGuestUsage();
+        if (usage.count >= GUEST_LIMIT) {
           return new Response("Sign in to continue chatting.", { status: 402 });
         }
+        setCookie(GUEST_COOKIE, `${usage.today}:${usage.count + 1}`, {
+          httpOnly: true,
+          secure: true,
+          sameSite: "lax",
+          path: "/",
+          maxAge: 60 * 60 * 24,
+        });
 
         const ALLOWED = new Set([
           "google/gemini-3-flash-preview",

@@ -10,12 +10,17 @@ import { toast } from "sonner";
 import logo from "@/assets/tgpt-logo.png";
 
 export const Route = createFileRoute("/login")({
+  validateSearch: (search) => ({
+    redirect: typeof search.redirect === "string" && search.redirect.startsWith("/") ? search.redirect : "/chat",
+  }),
   component: LoginPage,
   head: () => ({ meta: [{ title: "Sign in — T-GPT" }] }),
 });
 
 function LoginPage() {
   const navigate = useNavigate();
+  const { redirect } = Route.useSearch();
+  const goToRedirect = () => window.location.assign(redirect);
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [adminMode, setAdminMode] = useState(false);
   const [email, setEmail] = useState("");
@@ -39,9 +44,9 @@ function LoginPage() {
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
-      if (data.user) navigate({ to: "/" });
+      if (data.user) goToRedirect();
     });
-  }, [navigate]);
+  }, [redirect]);
 
   const handleEmail = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -59,7 +64,7 @@ function LoginPage() {
         // Auto-confirm is enabled, so a session should exist immediately
         if (data.session) {
           toast.success("Welcome to T-GPT!");
-          navigate({ to: "/" });
+          goToRedirect();
         } else {
           toast.success("Account created! Check your email to confirm, then sign in.");
           setMode("signin");
@@ -80,7 +85,7 @@ function LoginPage() {
           navigate({ to: "/admin" });
         } else {
           toast.success("Welcome back!");
-          navigate({ to: "/" });
+          goToRedirect();
         }
       }
     } catch (err: unknown) {
@@ -99,10 +104,11 @@ function LoginPage() {
     try {
       const result = await lovable.auth.signInWithOAuth("google", {
         redirect_uri: window.location.origin,
+        extraParams: { prompt: "select_account" },
       });
       if (result.error) throw new Error(result.error.message ?? "Google sign-in failed");
       if (result.redirected) return;
-      navigate({ to: "/" });
+      goToRedirect();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Google sign-in failed";
       setAuthError(msg);

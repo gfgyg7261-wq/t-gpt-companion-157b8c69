@@ -41,6 +41,7 @@ export const Route = createFileRoute("/")({
 });
 
 const FREE_LIMIT = 5;
+const GUEST_COUNT_KEY = "tgpt:guest-message-count";
 
 const SUGGESTIONS = [
   { icon: Sparkles, text: "Brainstorm a wild startup idea" },
@@ -53,6 +54,10 @@ function Landing() {
   const navigate = useNavigate();
   const [showAuthGate, setShowAuthGate] = useState(false);
   const [input, setInput] = useState("");
+  const [storedGuestCount, setStoredGuestCount] = useState(() => {
+    if (typeof window === "undefined") return 0;
+    return Number(localStorage.getItem(GUEST_COUNT_KEY)) || 0;
+  });
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // If already signed in, jump to the full app
@@ -79,7 +84,7 @@ function Landing() {
     onError: (err) => toast.error(err.message || "Something went wrong"),
   });
 
-  const userMsgCount = messages.filter((m) => m.role === "user").length;
+  const userMsgCount = Math.max(storedGuestCount, messages.filter((m) => m.role === "user").length);
   const remaining = Math.max(0, FREE_LIMIT - userMsgCount);
   const limitReached = userMsgCount >= FREE_LIMIT;
 
@@ -100,6 +105,9 @@ function Landing() {
       setShowAuthGate(true);
       return;
     }
+    const nextCount = Math.min(FREE_LIMIT, userMsgCount + 1);
+    setStoredGuestCount(nextCount);
+    localStorage.setItem(GUEST_COUNT_KEY, String(nextCount));
     sendMessage({ text: t });
     setInput("");
   };
