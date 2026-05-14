@@ -253,7 +253,7 @@ function AuthLayout() {
                         <button
                           type="button"
                           onClick={(e) => e.stopPropagation()}
-                          className="opacity-0 group-hover:opacity-100 p-2 text-muted-foreground hover:text-foreground transition"
+                          className="opacity-100 p-2 text-white hover:text-white/80 transition"
                           aria-label="Chat options"
                         >
                           <MoreHorizontal className="h-4 w-4" />
